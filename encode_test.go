@@ -30,7 +30,7 @@ type eCall uint8
 const (
 	unsafeEncCall eCall = iota + 1
 	encCall
-	encAppendCall
+	appendEncCall
 )
 
 type encoderTestCase struct {
@@ -136,6 +136,12 @@ func (tc encoderTestCase) runTI(t *testing.T, tci int) {
 		return f
 	}
 
+	tc.runVariants(t, f)
+}
+
+func (tc encoderTestCase) runVariants(t *testing.T, f func(encoderTestCase, string) func(*testing.T)) {
+	t.Helper()
+
 	f(tc, "")(t)
 
 	if tc.call == encCall && tc.expPanic == nil {
@@ -145,15 +151,15 @@ func (tc encoderTestCase) runTI(t *testing.T, tci int) {
 			dst := []byte(`test_`)
 			tc.expStr = string(dst) + tc.expStr
 			tc.dst = dst
-			tc.call = encAppendCall
-			f(tc, "encCall2encAppendCall")(t)
+			tc.call = appendEncCall
+			f(tc, "encCall2appendEncCall")(t)
 		}
 
 		{
 			tc := tc.clone()
 
-			tc.call = encAppendCall
-			f(tc, "encCall2encAppendCall-nil-dst")(t)
+			tc.call = appendEncCall
+			f(tc, "encCall2appendEncCall-nil-dst")(t)
 		}
 
 		if len(tc.src) > 0 {
@@ -167,6 +173,8 @@ func (tc encoderTestCase) runTI(t *testing.T, tci int) {
 }
 
 func (tc encoderTestCase) run(t *testing.T) {
+	t.Helper()
+
 	is := assert.New(t)
 
 	length := tc.srcLen
@@ -203,7 +211,7 @@ func (tc encoderTestCase) run(t *testing.T) {
 		}
 
 		is.Equal(tc.expStr, string(resp))
-	case encAppendCall:
+	case appendEncCall:
 		resp := AppendEncode(tc.dst, src)
 
 		if len(src) == 0 && tc.dst == nil {
