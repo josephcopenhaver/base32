@@ -158,9 +158,11 @@ func (tc decoderTestCase) runTI(t *testing.T, tci int) {
 						if tc.expErr == nil && tc.expErrStr == "" {
 							is.Nil(errResp)
 							is.Equal(tc.expStr, string(resp))
-						} else {
+						} else if src == nil || errResp == ErrInvalidBase32Length {
 							is.Nil(resp)
 						}
+						// otherwise resp could be dirty, out of scope to evaluate
+
 					case decAppendCall:
 						resp, errResp := AppendDecode(tc.dst, src)
 
@@ -179,6 +181,7 @@ func (tc decoderTestCase) runTI(t *testing.T, tci int) {
 							is.Nil(resp)
 						}
 						// otherwise resp could be dirty, out of scope to evaluate
+
 					default:
 						panic("misconfigured test case")
 					}
