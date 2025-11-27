@@ -10,7 +10,10 @@ import (
 func TestTables(t *testing.T) {
 	t.Parallel()
 
-	const b32Chars = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+	const (
+		b32Chars         = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
+		invalidDecodeVal = byte(b32Invalid)
+	)
 
 	is := assert.New(t)
 
@@ -33,13 +36,16 @@ func TestTables(t *testing.T) {
 		c := byte(i)
 
 		uc, i := validChar(c)
-
 		if i == -1 {
-			is.Equal(byte(b32Invalid), decodeTab[c])
+			is.Equal(invalidDecodeVal, decodeTab[c])
 			continue
 		}
 
 		is.Equal(i, int8(decodeTab[c]))
 		is.Equal(uc, encodeTab[i])
 	}
+
+	// verify hardcoded alias values
+	is.Equal(uint8(0), decodeTab['0'])
+	is.Equal(uint8(1), decodeTab['1'])
 }

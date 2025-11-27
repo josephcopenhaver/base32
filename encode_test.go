@@ -97,15 +97,23 @@ func (tc encoderTestCase) runTI(t *testing.T, tci int) {
 			})
 		}
 
-		if given != nil {
+		if tc.given != nil {
 			if givenStr == "" {
-				givenStr = "context unspecified"
-			}
-			nf := given(f)
-			f = func(t *testing.T) {
-				t.Helper()
+				f = func(t *testing.T) {
+					t.Helper()
 
-				t.Run("given "+givenStr, nf)
+					t.Fatal("test config error: 'given' specification had no description string")
+				}
+			} else {
+				nf := f
+				if given != nil {
+					nf = given(nf)
+				}
+				f = func(t *testing.T) {
+					t.Helper()
+
+					t.Run("given "+givenStr, nf)
+				}
 			}
 		}
 
