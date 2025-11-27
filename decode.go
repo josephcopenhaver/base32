@@ -182,10 +182,18 @@ func UnsafeDecode(dst []byte, src []byte) error {
 	return decode(dst, src)
 }
 
-// Decode returns the decoded form of src or nil if the
-// length of source is zero or an error occurs during
-// decoding. If an error occurred during decoding then
-// a non-nil error will be returned.
+// Decode returns the decoded form of src if src is not empty. If src is
+// empty nil is returned.
+//
+// If an error occurs during decoding then an error will be returned.
+//
+// If an error is returned the caller must not assume the returned slice
+// is nil. It is the caller's responsibility to choose how to handle a
+// non-nil result in such a case. If the data is not sensitive simply
+// ignore it. If it is sensitive consider clearing the slice of
+// contents. There is no guarantee about the contents of the slice when a
+// non-nil error is returned. It could be partially decoded or contain
+// empty bytes.
 func Decode(src []byte) ([]byte, error) {
 	n := len(src)
 	if n == 0 {
@@ -200,11 +208,7 @@ func Decode(src []byte) ([]byte, error) {
 	dst := make([]byte, n)
 
 	err := decode(dst, src)
-	if err != nil {
-		return nil, err
-	}
-
-	return dst, nil
+	return dst, err
 }
 
 // AppendDecode returns the decoded form of src appended to dst
@@ -218,7 +222,7 @@ func Decode(src []byte) ([]byte, error) {
 // ignore it. If it is sensitive consider clearing the slice of
 // newly appended contents. There is no guarantee about the contents of
 // the appended slice when a non-nil error is returned. It could be
-// partially decoded or not.
+// partially decoded or contain empty bytes.
 func AppendDecode(dst, src []byte) ([]byte, error) {
 	n := len(src)
 	if n == 0 {

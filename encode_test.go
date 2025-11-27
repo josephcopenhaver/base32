@@ -92,54 +92,7 @@ func (tc encoderTestCase) runTI(t *testing.T, tci int) {
 				t.Run("then "+then, func(t *testing.T) {
 					t.Helper()
 
-					is := assert.New(t)
-
-					length := tc.srcLen
-					if length == 0 {
-						length = len(tc.src)
-					}
-					var src []byte
-					if length > 0 {
-						src = []byte(tc.src[:length])
-					}
-
-					switch tc.call {
-					case unsafeEncCall:
-						if tc.expPanic != nil {
-							is.PanicsWithValue(tc.expPanic, func() {
-								UnsafeEncode(tc.dst, src)
-							})
-							is.Empty(tc.expStr)
-							break
-						}
-
-						is.NotPanics(func() {
-							UnsafeEncode(tc.dst, src)
-						})
-						is.Equal(tc.expStr, string(tc.dst))
-					case encCall:
-						is.Nil(tc.dst)
-
-						resp := Encode(src)
-
-						if tc.expStr == "" {
-							is.Nil(resp)
-							break
-						}
-
-						is.Equal(tc.expStr, string(resp))
-					case encAppendCall:
-						resp := AppendEncode(tc.dst, src)
-
-						if len(src) == 0 && tc.dst == nil {
-							is.Nil(resp)
-							break
-						}
-
-						is.Equal(tc.expStr, string(resp))
-					default:
-						panic("misconfigured test case")
-					}
+					tc.run(t)
 				})
 			})
 		}
@@ -210,6 +163,57 @@ func (tc encoderTestCase) runTI(t *testing.T, tci int) {
 			tc.call = unsafeEncCall
 			f(tc, "encCall2unsafeEncCall")(t)
 		}
+	}
+}
+
+func (tc encoderTestCase) run(t *testing.T) {
+	is := assert.New(t)
+
+	length := tc.srcLen
+	if length == 0 {
+		length = len(tc.src)
+	}
+	var src []byte
+	if length > 0 {
+		src = []byte(tc.src[:length])
+	}
+
+	switch tc.call {
+	case unsafeEncCall:
+		if tc.expPanic != nil {
+			is.PanicsWithValue(tc.expPanic, func() {
+				UnsafeEncode(tc.dst, src)
+			})
+			is.Empty(tc.expStr)
+			break
+		}
+
+		is.NotPanics(func() {
+			UnsafeEncode(tc.dst, src)
+		})
+		is.Equal(tc.expStr, string(tc.dst))
+	case encCall:
+		is.Nil(tc.dst)
+
+		resp := Encode(src)
+
+		if tc.expStr == "" {
+			is.Nil(resp)
+			break
+		}
+
+		is.Equal(tc.expStr, string(resp))
+	case encAppendCall:
+		resp := AppendEncode(tc.dst, src)
+
+		if len(src) == 0 && tc.dst == nil {
+			is.Nil(resp)
+			break
+		}
+
+		is.Equal(tc.expStr, string(resp))
+	default:
+		panic("misconfigured test case")
 	}
 }
 

@@ -104,84 +104,7 @@ func (tc decoderTestCase) runTI(t *testing.T, tci int) {
 				t.Run("then "+then, func(t *testing.T) {
 					t.Helper()
 
-					is := assert.New(t)
-
-					var src []byte
-					if len(tc.src) > 0 {
-						src = []byte(tc.src)
-					}
-
-					switch tc.call {
-					case unsafeDecCall:
-						if tc.expPanic != nil {
-							is.PanicsWithValue(tc.expPanic, func() {
-								UnsafeDecode(tc.dst, src)
-							})
-							is.Empty(tc.expStr)
-							is.Empty(tc.expErr)
-							is.Empty(tc.expErrStr)
-							break
-						}
-
-						var errResp error
-						is.NotPanics(func() {
-							errResp = UnsafeDecode(tc.dst, src)
-						})
-
-						if tc.expErr != nil {
-							is.ErrorIs(errResp, tc.expErr)
-						}
-
-						if tc.expErrStr != "" {
-							is.Equal(tc.expErrStr, errResp.Error())
-						}
-
-						if tc.expErr == nil && tc.expErrStr == "" {
-							is.Nil(errResp)
-							is.Equal(tc.expStr, string(tc.dst))
-						}
-						// otherwise dst could be dirty, out of scope to evaluate
-
-					case decCall:
-						is.Nil(tc.dst)
-
-						resp, errResp := Decode(src)
-
-						if tc.expErr != nil {
-							is.ErrorIs(errResp, tc.expErr)
-						}
-
-						if tc.expErrStr != "" {
-							is.Equal(tc.expErrStr, errResp.Error())
-						}
-
-						if tc.expErr == nil && tc.expErrStr == "" {
-							is.Nil(errResp)
-							is.Equal(tc.expStr, string(resp))
-						} else {
-							is.Nil(resp)
-						}
-					case decAppendCall:
-						resp, errResp := AppendDecode(tc.dst, src)
-
-						if tc.expErr != nil {
-							is.ErrorIs(errResp, tc.expErr)
-						}
-
-						if tc.expErrStr != "" {
-							is.Equal(tc.expErrStr, errResp.Error())
-						}
-
-						if tc.expErr == nil && tc.expErrStr == "" {
-							is.Nil(errResp)
-							is.Equal(tc.expStr, string(resp))
-						} else if src == nil || errResp == ErrInvalidBase32Length {
-							is.Nil(resp)
-						}
-						// otherwise resp could be dirty, out of scope to evaluate
-					default:
-						panic("misconfigured test case")
-					}
+					tc.run(t)
 				})
 			})
 		}
@@ -252,6 +175,90 @@ func (tc decoderTestCase) runTI(t *testing.T, tci int) {
 			tc.call = unsafeDecCall
 			f(tc, "decCall2unsafeDecCall")(t)
 		}
+	}
+}
+
+func (tc decoderTestCase) run(t *testing.T) {
+	is := assert.New(t)
+
+	var src []byte
+	if len(tc.src) > 0 {
+		src = []byte(tc.src)
+	}
+
+	switch tc.call {
+	case unsafeDecCall:
+		if tc.expPanic != nil {
+			is.PanicsWithValue(tc.expPanic, func() {
+				UnsafeDecode(tc.dst, src)
+			})
+			is.Empty(tc.expStr)
+			is.Empty(tc.expErr)
+			is.Empty(tc.expErrStr)
+			break
+		}
+
+		var errResp error
+		is.NotPanics(func() {
+			errResp = UnsafeDecode(tc.dst, src)
+		})
+
+		if tc.expErr != nil {
+			is.ErrorIs(errResp, tc.expErr)
+		}
+
+		if tc.expErrStr != "" {
+			is.Equal(tc.expErrStr, errResp.Error())
+		}
+
+		if tc.expErr == nil && tc.expErrStr == "" {
+			is.Nil(errResp)
+			is.Equal(tc.expStr, string(tc.dst))
+		}
+		// otherwise dst could be dirty, out of scope to evaluate
+
+	case decCall:
+		is.Nil(tc.dst)
+
+		resp, errResp := Decode(src)
+
+		if tc.expErr != nil {
+			is.ErrorIs(errResp, tc.expErr)
+		}
+
+		if tc.expErrStr != "" {
+			is.Equal(tc.expErrStr, errResp.Error())
+		}
+
+		if tc.expErr == nil && tc.expErrStr == "" {
+			is.Nil(errResp)
+			is.Equal(tc.expStr, string(resp))
+		} else if src == nil || errResp == ErrInvalidBase32Length {
+			is.Nil(resp)
+		}
+		// otherwise resp could be dirty, out of scope to evaluate
+
+	case decAppendCall:
+		resp, errResp := AppendDecode(tc.dst, src)
+
+		if tc.expErr != nil {
+			is.ErrorIs(errResp, tc.expErr)
+		}
+
+		if tc.expErrStr != "" {
+			is.Equal(tc.expErrStr, errResp.Error())
+		}
+
+		if tc.expErr == nil && tc.expErrStr == "" {
+			is.Nil(errResp)
+			is.Equal(tc.expStr, string(resp))
+		} else if src == nil || errResp == ErrInvalidBase32Length {
+			is.Nil(resp)
+		}
+		// otherwise resp could be dirty, out of scope to evaluate
+
+	default:
+		panic("misconfigured test case")
 	}
 }
 
