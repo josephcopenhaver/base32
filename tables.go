@@ -42,9 +42,9 @@ var encodeTab, decodeTab = func() ([32]byte, [256]byte) {
 	}
 
 	// char aliases
-	upLetter('O', dec['0'])
-	upLetter('I', dec['1'])
-	upLetter('L', dec['1'])
+	upLetter('O', 0)
+	upLetter('I', 1)
+	upLetter('L', 1)
 
 	return enc, dec
 }()
