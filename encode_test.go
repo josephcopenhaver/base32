@@ -1,11 +1,12 @@
 package base32
 
 import (
+	"iter"
 	"math"
 	"slices"
-	"strconv"
 	"testing"
 
+	"github.com/josephcopenhaver/tbdd-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,13 +34,7 @@ const (
 	appendEncCall
 )
 
-type encoderTestCase struct {
-	// given describes initial configurations in a BDD style
-	given func(*testing.T, encoderTestCase) (string, encoderTestCase, func(func(*testing.T)) func(*testing.T))
-	// when describes the action being taken under the initial conditions of given in a BDD style
-	when string
-	// then describes the desired outcome from the action taken in a BDD style
-	then string
+type encodeTC struct {
 	// the function operation to call
 	call eCall
 	// srcLen determines the source byte length to test
@@ -55,7 +50,12 @@ type encoderTestCase struct {
 	expPanic any
 }
 
-func (tc encoderTestCase) clone() encoderTestCase {
+type encodeTCR struct {
+	str    string
+	nilDst bool
+}
+
+func (tc encodeTC) clone() encodeTC {
 	ctc := tc
 
 	ctc.dst = slices.Clone(tc.dst)
@@ -63,135 +63,61 @@ func (tc encoderTestCase) clone() encoderTestCase {
 	return ctc
 }
 
-func (tc encoderTestCase) runTI(t *testing.T, tci int) {
-	t.Helper()
-
-	f := func(tc encoderTestCase, extraCfg string) func(*testing.T) {
-		tc = tc.clone()
-
-		var givenStr string
-		var given func(func(*testing.T)) func(*testing.T)
-		if f := tc.given; f != nil {
-			givenStr, tc, given = f(t, tc)
-		}
-
-		f := func(t *testing.T) {
-			t.Helper()
-
-			t.Run("when "+tc.when, func(t *testing.T) {
-				t.Helper()
-
-				then := tc.then
-				if then == "" {
-					if tc.expPanic != nil {
-						then = "a panic should occur"
-					} else {
-						then = "no error should occur"
-					}
-				}
-				t.Run("then "+then, func(t *testing.T) {
-					t.Helper()
-
-					tc.run(t)
-				})
-			})
-		}
-
-		if tc.given != nil {
-			if givenStr == "" {
-				f = func(t *testing.T) {
-					t.Helper()
-
-					t.Fatal("test config error: 'given' specification had no description string")
-				}
-			} else {
-				nf := f
-				if given != nil {
-					nf = given(nf)
-				}
-				f = func(t *testing.T) {
-					t.Helper()
-
-					t.Run("given "+givenStr, nf)
-				}
-			}
-		}
-
-		{
-			var prefix string
-
-			if tci >= 0 {
-				prefix = strconv.Itoa(tci)
-			}
-
-			if extraCfg != "" {
-				if prefix != "" {
-					prefix += "/"
-				}
-				prefix += extraCfg
-			}
-
-			if prefix != "" {
-				nf := f
-				f = func(t *testing.T) {
-					t.Helper()
-
-					t.Run(prefix, nf)
-				}
-			}
-		}
-
-		return f
-	}
-
-	tc.runVariants(t, f)
+func cloneEncodeTC(tc encodeTC) encodeTC {
+	return tc.clone()
 }
 
-func (tc encoderTestCase) runVariants(t *testing.T, f func(encoderTestCase, string) func(*testing.T)) {
-	t.Helper()
-
-	f(tc, "")(t)
-
-	if tc.call == encCall && tc.expPanic == nil {
-		{
-			tc := tc.clone()
-
-			dst := []byte(`test_`)
-			tc.expStr = string(dst) + tc.expStr
-			tc.dst = dst
-			tc.call = appendEncCall
-			f(tc, "encCall2appendEncCall")(t)
-		}
-
-		{
-			tc := tc.clone()
-
-			tc.call = appendEncCall
-			f(tc, "encCall2appendEncCall-nil-dst")(t)
-		}
-
-		if len(tc.src) > 0 {
-			tc := tc.clone()
-
-			tc.dst = make([]byte, len(tc.expStr))
-			tc.call = unsafeEncCall
-			f(tc, "encCall2unsafeEncCall")(t)
-		}
-	}
-}
-
-func (tc encoderTestCase) run(t *testing.T) {
+func descEncodeTC(t *testing.T, cfg tbdd.Describe[encodeTC]) tbdd.DescribeResponse {
 	t.Helper()
 
 	is := assert.New(t)
 
-	length := tc.srcLen
-	if length == 0 {
-		length = len(tc.src)
+	tc := cfg.TC
+	when := cfg.When
+	then := cfg.Then
+
+	is.NotEmpty(when)
+	// Infer 'then' if not already defined.
+	if then == "" {
+		if tc.expPanic != nil {
+			then = "should panic"
+		} else {
+			then = "should succeed"
+		}
 	}
+
+	return tbdd.DescribeResponse{
+		When: when,
+		Then: then,
+	}
+}
+
+func runEncodeTC(t *testing.T, tc encodeTC) encodeTCR {
+	t.Helper()
+
+	is := assert.New(t)
+
+	// verify TC configuration expectations makes sense
+	if tc.expPanic != nil {
+		// individual checks before potential unified failure
+		is.Empty(tc.expStr)
+
+		if tc.expStr != "" {
+			t.Fatal("invalid test case config: when a panic is expected, nothing else should be expected")
+		}
+	} else if len(tc.src) > 0 && tc.expStr == "" {
+		t.Fatal("invalid test case config: test case expects an empty result when input is non-zero and no panics are expected")
+	}
+
 	var src []byte
-	if length > 0 {
-		src = []byte(tc.src[:length])
+	{
+		length := tc.srcLen
+		if length == 0 {
+			length = len(tc.src)
+		}
+		if length > 0 {
+			src = []byte(tc.src[:length])
+		}
 	}
 
 	switch tc.call {
@@ -200,98 +126,205 @@ func (tc encoderTestCase) run(t *testing.T) {
 			is.PanicsWithValue(tc.expPanic, func() {
 				UnsafeEncode(tc.dst, src)
 			})
-			is.Empty(tc.expStr)
-			break
+			return encodeTCR{}
 		}
 
-		is.NotPanics(func() {
-			UnsafeEncode(tc.dst, src)
-		})
-		is.Equal(tc.expStr, string(tc.dst))
+		UnsafeEncode(tc.dst, src)
+
+		return encodeTCR{string(tc.dst), false}
 	case encCall:
 		is.Nil(tc.dst)
 
 		resp := Encode(src)
 
-		if tc.expStr == "" {
-			is.Nil(resp)
-			break
-		}
-
-		is.Equal(tc.expStr, string(resp))
+		return encodeTCR{string(resp), resp == nil}
 	case appendEncCall:
 		resp := AppendEncode(tc.dst, src)
 
-		if len(src) == 0 && tc.dst == nil {
-			is.Nil(resp)
-			break
-		}
-
-		is.Equal(tc.expStr, string(resp))
+		return encodeTCR{string(resp), resp == nil}
 	default:
 		panic("misconfigured test case")
 	}
 }
 
+func checkEncodeTCR(t *testing.T, cfg tbdd.Assert[encodeTC, encodeTCR]) {
+	t.Helper()
+
+	is := assert.New(t)
+
+	tc := cfg.TC
+	r := cfg.Result
+
+	if tc.expPanic != nil {
+		return
+	}
+
+	switch tc.call {
+	case unsafeEncCall:
+	case encCall:
+		if tc.expStr == "" {
+			is.True(r.nilDst)
+		}
+	case appendEncCall:
+		if len(tc.src) == 0 && tc.dst == nil {
+			is.True(r.nilDst)
+		}
+	default:
+		panic("misconfigured test case")
+	}
+
+	is.Equal(tc.expStr, string(r.str))
+}
+
+func encodeTCVariants(t *testing.T, tc encodeTC) iter.Seq[tbdd.TestVariant[encodeTC]] {
+	t.Helper()
+
+	return func(yield func(tbdd.TestVariant[encodeTC]) bool) {
+		t.Helper()
+
+		if tc.call != encCall || tc.expPanic != nil {
+			return
+		}
+
+		{
+			tc := tc.clone()
+
+			dst := []byte(`test_`)
+			tc.expStr = string(dst) + tc.expStr
+			tc.dst = dst
+			tc.call = appendEncCall
+
+			if !yield(tbdd.TestVariant[encodeTC]{
+				TC:          tc,
+				Kind:        "encCall2appendEncCall",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		{
+			tc := tc.clone()
+
+			tc.call = appendEncCall
+
+			if !yield(tbdd.TestVariant[encodeTC]{
+				TC:          tc,
+				Kind:        "encCall2appendEncCall-nil-dst",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		if len(tc.src) > 0 {
+			tc := tc.clone()
+
+			tc.dst = make([]byte, len(tc.expStr))
+			tc.call = unsafeEncCall
+
+			if !yield(tbdd.TestVariant[encodeTC]{
+				TC:          tc,
+				Kind:        "encCall2unsafeEncCall",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+	}
+}
+
+// TestEncode uses the tbdd.BDDLifecycle "test helper".
+// For each entry in tcs:
+//   - TC describes inputs + expectations.
+//   - Act (runEncodeTC) runs the appropriate decode function based on TC.call.
+//   - Assert (checkEncodeTCR) validates the result against expectations.
+//   - Variants (encodeTCVariants) generate additional derived test cases.
+//   - Describe (descEncodeTC) fills in the "then" string if not set.
+//
+// To add a new scenario, append a new BDDLifecycle entry to tcs.
 func TestEncode(t *testing.T) {
 	t.Parallel()
 
-	tcs := []encoderTestCase{
+	tcs := []tbdd.BDDLifecycle[encodeTC, encodeTCR]{
 		{
-			when:   "19 bytes",
-			call:   encCall,
-			src:    "1234567890123456789",
-			srcLen: 19,
-			expStr: "64S36D1N6RVKGE9G64S36D1N6RVKGE8",
+			When: "19 bytes",
+			TC: encodeTC{
+				call:   encCall,
+				src:    "1234567890123456789",
+				srcLen: 19,
+				expStr: "64S36D1N6RVKGE9G64S36D1N6RVKGE8",
+			},
 		},
 		{
-			when:   "18 bytes",
-			call:   encCall,
-			src:    "1234567890123456789",
-			srcLen: 18,
-			expStr: "64S36D1N6RVKGE9G64S36D1N6RVKG",
+			When: "18 bytes",
+			TC: encodeTC{
+				call:   encCall,
+				src:    "1234567890123456789",
+				srcLen: 18,
+				expStr: "64S36D1N6RVKGE9G64S36D1N6RVKG",
+			},
 		},
 		{
-			when:   "17 bytes",
-			call:   encCall,
-			src:    "1234567890123456789",
-			srcLen: 17,
-			expStr: "64S36D1N6RVKGE9G64S36D1N6RVG",
+			When: "17 bytes",
+			TC: encodeTC{
+				call:   encCall,
+				src:    "1234567890123456789",
+				srcLen: 17,
+				expStr: "64S36D1N6RVKGE9G64S36D1N6RVG",
+			},
 		},
 		{
-			when:   "16 bytes",
-			call:   encCall,
-			src:    "1234567890123456789",
-			srcLen: 16,
-			expStr: "64S36D1N6RVKGE9G64S36D1N6R",
+			When: "16 bytes",
+			TC: encodeTC{
+				call:   encCall,
+				src:    "1234567890123456789",
+				srcLen: 16,
+				expStr: "64S36D1N6RVKGE9G64S36D1N6R",
+			},
 		},
 		{
-			when:   "15 bytes",
-			call:   encCall,
-			src:    "1234567890123456789",
-			srcLen: 15,
-			expStr: "64S36D1N6RVKGE9G64S36D1N",
+			When: "15 bytes",
+			TC: encodeTC{
+				call:   encCall,
+				src:    "1234567890123456789",
+				srcLen: 15,
+				expStr: "64S36D1N6RVKGE9G64S36D1N",
+			},
 		},
 		{
-			when: "0 bytes",
-			call: encCall,
+			When: "0 bytes",
+			TC: encodeTC{
+				call: encCall,
+			},
 		},
 		{
-			when:     "unsafe-encode destination has no capacity and source is not empty",
-			call:     unsafeEncCall,
-			src:      "1",
-			dst:      []byte{},
-			expPanic: "base32: encode destination too short",
+			When: "unsafe-encode destination has no capacity and source is not empty",
+			TC: encodeTC{
+				call:     unsafeEncCall,
+				src:      "1",
+				dst:      []byte{},
+				expPanic: "base32: encode destination too short",
+			},
 		},
 		{
-			when:     "unsafe-encode src is empty",
-			call:     unsafeEncCall,
-			src:      "",
-			expPanic: "base32: invalid encode source length",
+			When: "unsafe-encode src is empty",
+			TC: encodeTC{
+				call:     unsafeEncCall,
+				src:      "",
+				expPanic: "base32: invalid encode source length",
+			},
 		},
 	}
 
 	for i, tc := range tcs {
-		tc.runTI(t, i)
+		tc.CloneTC = cloneEncodeTC
+		tc.Variants = encodeTCVariants
+		tc.Describe = descEncodeTC
+		tc.Act = runEncodeTC
+		tc.Assert = checkEncodeTCR
+
+		f := tc.NewI(t, i)
+		f(t)
 	}
 }
