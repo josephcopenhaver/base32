@@ -254,7 +254,6 @@ func TestEncode(t *testing.T) {
 		{
 			When: "19 bytes",
 			TC: encodeTC{
-				call:   encCall,
 				src:    "1234567890123456789",
 				srcLen: 19,
 				expStr: "64S36D1N6RVKGE9G64S36D1N6RVKGE8",
@@ -263,7 +262,6 @@ func TestEncode(t *testing.T) {
 		{
 			When: "18 bytes",
 			TC: encodeTC{
-				call:   encCall,
 				src:    "1234567890123456789",
 				srcLen: 18,
 				expStr: "64S36D1N6RVKGE9G64S36D1N6RVKG",
@@ -272,7 +270,6 @@ func TestEncode(t *testing.T) {
 		{
 			When: "17 bytes",
 			TC: encodeTC{
-				call:   encCall,
 				src:    "1234567890123456789",
 				srcLen: 17,
 				expStr: "64S36D1N6RVKGE9G64S36D1N6RVG",
@@ -281,7 +278,6 @@ func TestEncode(t *testing.T) {
 		{
 			When: "16 bytes",
 			TC: encodeTC{
-				call:   encCall,
 				src:    "1234567890123456789",
 				srcLen: 16,
 				expStr: "64S36D1N6RVKGE9G64S36D1N6R",
@@ -290,7 +286,6 @@ func TestEncode(t *testing.T) {
 		{
 			When: "15 bytes",
 			TC: encodeTC{
-				call:   encCall,
 				src:    "1234567890123456789",
 				srcLen: 15,
 				expStr: "64S36D1N6RVKGE9G64S36D1N",
@@ -327,6 +322,11 @@ func TestEncode(t *testing.T) {
 		tc.Describe = descEncodeTC
 		tc.Act = runEncodeTC
 		tc.Assert = checkEncodeTCR
+
+		// if no call is specified, use encCall
+		if tc.TC.call == 0 {
+			tc.TC.call = encCall
+		}
 
 		f := tc.NewI(t, i)
 		f(t)
