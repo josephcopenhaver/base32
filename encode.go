@@ -7,8 +7,32 @@ import (
 	"unsafe"
 )
 
+// EncodedLength returns the number of bytes required to
+// encode n bytes. It returns -1 if the input byte length
+// cannot be encoded properly.
+//
+// If the input is zero, zero will be returned. Remember
+// that UnsafeEncode requires the src argument
+// to have a length greater than zero.
+func EncodedLength(n int) int {
+	if n < 0 {
+		return -1
+	}
+
+	result := encodedLenExpression(n)
+	if result <= n && n != 0 {
+		return -1
+	}
+
+	return result
+}
+
+func encodedLenExpression(n int) int {
+	return (n/5)*8 + ((n%5)*8+4)/5
+}
+
 func encodedLen(n int) int {
-	result := (n/5)*8 + ((n%5)*8+4)/5
+	result := encodedLenExpression(n)
 	if result <= n {
 		panic("base32: invalid encode source length")
 	}
