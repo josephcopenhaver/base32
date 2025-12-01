@@ -15,15 +15,19 @@ func Test_encodedLen(t *testing.T) {
 
 	is := assert.New(t)
 
-	is.PanicsWithValue("base32: invalid encode source length", func() {
-		encodedLen(5 + (math.MaxInt / 8 * 5))
-	})
+	const inputTooBig = 5 + (math.MaxInt / 8 * 5)
+	const inputOK = math.MaxInt / 8 * 5
+	const outputOK = (inputOK/5)*8 + ((inputOK%5)*8+4)/5
 
-	is.NotPanics(func() {
-		input := (math.MaxInt / 8 * 5)
-		resp := encodedLen(input)
-		is.Equal((input/5)*8+((input%5)*8+4)/5, resp)
+	is.PanicsWithValue("base32: invalid encode source length", func() {
+		encodedLen(inputTooBig)
 	})
+	is.Equal(-1, EncodedLength(inputTooBig))
+
+	is.Equal(outputOK, encodedLen(inputOK))
+	is.Equal(outputOK, EncodedLength(inputOK))
+	is.Equal(0, EncodedLength(0))
+	is.Equal(-1, EncodedLength(-inputOK))
 }
 
 type eCall uint8
@@ -237,7 +241,7 @@ func encodeTCVariants(t *testing.T, tc encodeTC) iter.Seq[tbdd.TestVariant[encod
 // TestEncode uses the tbdd.BDDLifecycle "test helper".
 // For each entry in tcs:
 //   - TC describes inputs + expectations.
-//   - Act (runEncodeTC) runs the appropriate decode function based on TC.call.
+//   - Act (runEncodeTC) runs the appropriate encode function based on TC.call.
 //   - Assert (checkEncodeTCR) validates the result against expectations.
 //   - Variants (encodeTCVariants) generate additional derived test cases.
 //   - Describe (descEncodeTC) fills in the "then" string if not set.

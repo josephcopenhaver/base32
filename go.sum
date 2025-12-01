@@ -1,7 +1,7 @@
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/josephcopenhaver/tbdd-go v0.0.0-20251130083807-e36bc0c611e5 h1:4sH6072/cosr9FLK5Y0NdLzKjNZjasvsEgvSqGPoRiA=
-github.com/josephcopenhaver/tbdd-go v0.0.0-20251130083807-e36bc0c611e5/go.mod h1:/TdWC7pmYqB4SuQ/8BkGXzfelRDgPtDyjOUnsY8eM+Y=
+github.com/josephcopenhaver/tbdd-go v0.0.0-20251201195211-ad6f71da59ff h1:3O2/EDMFjUjq1N+4WlR2kz8rRJ4z8cu2cqGYoJmYkIM=
+github.com/josephcopenhaver/tbdd-go v0.0.0-20251201195211-ad6f71da59ff/go.mod h1:/TdWC7pmYqB4SuQ/8BkGXzfelRDgPtDyjOUnsY8eM+Y=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=

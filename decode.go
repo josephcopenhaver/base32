@@ -32,6 +32,21 @@ var (
 	ErrInvalidBase32Char   = errors.New("invalid base32 character")
 )
 
+// DecodedLength returns the number of bytes required to
+// decode n bytes. It returns -1 if the input byte length
+// cannot be decoded properly.
+//
+// If the input is zero, zero will be returned. Please
+// remember that UnsafeDecode requires the src argument
+// to have a length greater than zero.
+func DecodedLength(n int) int {
+	if n < 0 {
+		return -1
+	}
+
+	return decodedLen(n)
+}
+
 // decodedLen returns the base32 encoded length of
 // base32 bytes with the provided length.
 //

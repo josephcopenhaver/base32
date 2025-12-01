@@ -21,15 +21,42 @@ func Test_decodedLen(t *testing.T) {
 	invalidRemainders[6] = true
 
 	for i := range uint8(8) {
-		n := decodedLen((math.MaxInt-7)/8*8 + int(i))
+		v := (math.MaxInt-7)/8*8 + int(i)
 
-		if invalidRemainders[i] {
-			is.Equal(-1, n)
-			continue
+		// decodedLen
+		{
+			n := decodedLen(v)
+
+			if invalidRemainders[i] {
+				is.Equal(-1, n)
+				continue
+			}
+
+			is.NotEqual(-1, n)
+			is.Greater(n, 0)
 		}
 
-		is.NotEqual(-1, n)
-		is.Greater(n, 0)
+		// DecodedLength
+		{
+			n := DecodedLength(v)
+
+			if invalidRemainders[i] {
+				is.Equal(-1, n)
+				continue
+			}
+
+			is.NotEqual(-1, n)
+			is.Greater(n, 0)
+
+			n = DecodedLength(-v)
+			is.Equal(-1, n)
+		}
+	}
+
+	// DecodedLength (zero case)
+	{
+		n := DecodedLength(0)
+		is.Equal(0, n)
 	}
 }
 
