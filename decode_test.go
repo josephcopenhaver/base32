@@ -317,7 +317,6 @@ func TestDecode(t *testing.T) {
 		{
 			When: "8 bytes",
 			TC: decodeTC{
-				call:   decCall,
 				src:    "64S36D1N",
 				expStr: "12345",
 			},
@@ -325,16 +324,13 @@ func TestDecode(t *testing.T) {
 		{
 			When: "8 bytes where last is invalid",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1U",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1U",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "31 bytes",
 			TC: decodeTC{
-				call:   decCall,
 				src:    "64S36D1N6RVKGE9G64S36D1N6RVKGE8",
 				expStr: "1234567890123456789",
 			},
@@ -342,34 +338,27 @@ func TestDecode(t *testing.T) {
 		{
 			When: "31 bytes where last is invalid",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RVKGEU",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RVKGEU",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "31 bytes with invalid tail bits",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RVKGE4",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RVKGE4",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "30 bytes",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RVKGE",
-				expErr:    ErrInvalidBase32Length,
-				expErrStr: ErrInvalidBase32Length.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RVKGE",
+				expErr: ErrInvalidBase32Length,
 			},
 		},
 		{
 			When: "29 bytes",
 			TC: decodeTC{
-				call:   decCall,
 				src:    "64S36D1N6RVKGE9G64S36D1N6RVKG",
 				expStr: "123456789012345678",
 			},
@@ -377,43 +366,34 @@ func TestDecode(t *testing.T) {
 		{
 			When: "29 bytes where last is invalid",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RVKU",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RVKU",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "29 bytes with invalid tail bits",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RVK1",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RVK1",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "28 bytes where last is invalid",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RVU",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RVU",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "28 bytes with invalid tail bits",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RV8",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RV8",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "28 bytes",
 			TC: decodeTC{
-				call:   decCall,
 				src:    "64S36D1N6RVKGE9G64S36D1N6RVG",
 				expStr: "12345678901234567",
 			},
@@ -421,34 +401,27 @@ func TestDecode(t *testing.T) {
 		{
 			When: "27 bytes",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6RV",
-				expErr:    ErrInvalidBase32Length,
-				expErrStr: ErrInvalidBase32Length.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6RV",
+				expErr: ErrInvalidBase32Length,
 			},
 		},
 		{
 			When: "26 bytes where last is invalid",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6U",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6U",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "26 bytes with invalid tail bits",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N62",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N62",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 		{
 			When: "26 bytes",
 			TC: decodeTC{
-				call:   decCall,
 				src:    "64S36D1N6RVKGE9G64S36D1N6R",
 				expStr: "1234567890123456",
 			},
@@ -456,16 +429,13 @@ func TestDecode(t *testing.T) {
 		{
 			When: "25 bytes",
 			TC: decodeTC{
-				call:      decCall,
-				src:       "64S36D1N6RVKGE9G64S36D1N6",
-				expErr:    ErrInvalidBase32Length,
-				expErrStr: ErrInvalidBase32Length.Error(),
+				src:    "64S36D1N6RVKGE9G64S36D1N6",
+				expErr: ErrInvalidBase32Length,
 			},
 		},
 		{
 			When: "24 bytes",
 			TC: decodeTC{
-				call:   decCall,
 				src:    "64S36D1N6RVKGE9G64S36D1N",
 				expStr: "123456789012345",
 			},
@@ -496,19 +466,17 @@ func TestDecode(t *testing.T) {
 		{
 			When: "append-decode source is invalid length",
 			TC: decodeTC{
-				call:      appendDecCall,
-				src:       "0",
-				expErr:    ErrInvalidBase32Length,
-				expErrStr: ErrInvalidBase32Length.Error(),
+				call:   appendDecCall,
+				src:    "0",
+				expErr: ErrInvalidBase32Length,
 			},
 		},
 		{
 			When: "append-decode source has an invalid char",
 			TC: decodeTC{
-				call:      appendDecCall,
-				src:       "0U",
-				expErr:    ErrInvalidBase32Char,
-				expErrStr: ErrInvalidBase32Char.Error(),
+				call:   appendDecCall,
+				src:    "0U",
+				expErr: ErrInvalidBase32Char,
 			},
 		},
 	}
@@ -519,6 +487,16 @@ func TestDecode(t *testing.T) {
 		tc.Describe = descDecodeTC
 		tc.Act = runDecodeTC
 		tc.Assert = checkDecodeTCR
+
+		// if no call is specified, use decCall
+		if tc.TC.call == 0 {
+			tc.TC.call = decCall
+		}
+
+		// expand single-error checks to string based error checking as well
+		if err := tc.TC.expErr; err != nil && tc.TC.expErrStr == "" {
+			tc.TC.expErrStr = err.Error()
+		}
 
 		f := tc.NewI(t, i)
 		f(t)
