@@ -267,7 +267,6 @@ func decodeTCVariants(t *testing.T, tc decodeTC) iter.Seq[tbdd.TestVariant[decod
 	t.Helper()
 
 	return func(yield func(tbdd.TestVariant[decodeTC]) bool) {
-		t.Helper()
 
 		if (tc.call == decCall || tc.call == appendDecCall) && (tc.expErr != nil || tc.expErrStr != "") {
 			// Generate string-based variants for error cases

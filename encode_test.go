@@ -194,7 +194,6 @@ func encodeTCVariants(t *testing.T, tc encodeTC) iter.Seq[tbdd.TestVariant[encod
 	t.Helper()
 
 	return func(yield func(tbdd.TestVariant[encodeTC]) bool) {
-		t.Helper()
 
 		if tc.call != encCall || tc.expPanic != nil {
 			return
