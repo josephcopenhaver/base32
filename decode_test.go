@@ -66,11 +66,13 @@ const (
 	unsafeDecCall dCall = iota + 1
 	decCall
 	appendDecCall
+	decStrCall
+	appendDecStrCall
 )
 
 func (c dCall) canHaveNilDst() bool {
 	switch c {
-	case decCall, appendDecCall:
+	case decCall, appendDecCall, decStrCall, appendDecStrCall:
 		return true
 	case unsafeDecCall:
 		return false
@@ -133,10 +135,24 @@ func (tc decodeTC) runDec(t *testing.T, src []byte) decodeTCR {
 	return decodeTCR{string(dst), err, dst == nil}
 }
 
+func (tc decodeTC) runDecStr(t *testing.T, src []byte) decodeTCR {
+	t.Helper()
+
+	dst, err := DecodeString(string(src))
+	return decodeTCR{string(dst), err, dst == nil}
+}
+
 func (tc decodeTC) runAppendDec(t *testing.T, src []byte) decodeTCR {
 	t.Helper()
 
 	dst, err := AppendDecode(tc.dst, src)
+	return decodeTCR{string(dst), err, dst == nil}
+}
+
+func (tc decodeTC) runAppendDecStr(t *testing.T, src []byte) decodeTCR {
+	t.Helper()
+
+	dst, err := AppendDecodeString(tc.dst, string(src))
 	return decodeTCR{string(dst), err, dst == nil}
 }
 
@@ -202,6 +218,10 @@ func runDecodeTC(t *testing.T, tc decodeTC) decodeTCR {
 		return tc.runDec(t, src)
 	case appendDecCall:
 		return tc.runAppendDec(t, src)
+	case decStrCall:
+		return tc.runDecStr(t, src)
+	case appendDecStrCall:
+		return tc.runAppendDecStr(t, src)
 	default:
 		panic("misconfigured test case")
 	}
@@ -249,8 +269,52 @@ func decodeTCVariants(t *testing.T, tc decodeTC) iter.Seq[tbdd.TestVariant[decod
 	return func(yield func(tbdd.TestVariant[decodeTC]) bool) {
 		t.Helper()
 
+		if (tc.call == decCall || tc.call == appendDecCall) && (tc.expErr != nil || tc.expErrStr != "") {
+			// Generate string-based variants for error cases
+
+			if tc.call == decCall {
+				tc := tc.clone()
+				tc.call = decStrCall
+
+				if !yield(tbdd.TestVariant[decodeTC]{
+					TC:          tc,
+					Kind:        "decCall2decStrCall-exp-err",
+					SkipCloneTC: true,
+				}) {
+					return
+				}
+			}
+
+			if tc.call == appendDecCall {
+				tc := tc.clone()
+				tc.call = appendDecStrCall
+
+				if !yield(tbdd.TestVariant[decodeTC]{
+					TC:          tc,
+					Kind:        "appendDecCall2appendDecStrCall-exp-err",
+					SkipCloneTC: true,
+				}) {
+					return
+				}
+			}
+		}
+
 		if tc.call != decCall || tc.expPanic != nil || tc.expErr != nil || tc.expErrStr != "" {
 			return
+		}
+
+		{
+			tc := tc.clone()
+
+			tc.call = decStrCall
+
+			if !yield(tbdd.TestVariant[decodeTC]{
+				TC:          tc,
+				Kind:        "decCall2decStrCall",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
 		}
 
 		{
@@ -273,11 +337,42 @@ func decodeTCVariants(t *testing.T, tc decodeTC) iter.Seq[tbdd.TestVariant[decod
 		{
 			tc := tc.clone()
 
+			dst := []byte(`test_`)
+			tc.expStr = string(dst) + tc.expStr
+			tc.dst = dst
+			tc.call = appendDecStrCall
+
+			if !yield(tbdd.TestVariant[decodeTC]{
+				TC:          tc,
+				Kind:        "decCall2appendDecStrCall",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		{
+			tc := tc.clone()
+
 			tc.call = appendDecCall
 
 			if !yield(tbdd.TestVariant[decodeTC]{
 				TC:          tc,
 				Kind:        "decCall2appendDecCall-nil-dst",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		{
+			tc := tc.clone()
+
+			tc.call = appendDecStrCall
+
+			if !yield(tbdd.TestVariant[decodeTC]{
+				TC:          tc,
+				Kind:        "decCall2appendDecStrCall-nil-dst",
 				SkipCloneTC: true,
 			}) {
 				return
