@@ -36,6 +36,8 @@ const (
 	unsafeEncCall eCall = iota + 1
 	encCall
 	appendEncCall
+	encStrCall
+	appendEncStrCall
 )
 
 type encodeTC struct {
@@ -146,6 +148,14 @@ func runEncodeTC(t *testing.T, tc encodeTC) encodeTCR {
 		resp := AppendEncode(tc.dst, src)
 
 		return encodeTCR{string(resp), resp == nil}
+	case encStrCall:
+		resp := EncodeString(string(src))
+
+		return encodeTCR{resp, false}
+	case appendEncStrCall:
+		resp := AppendEncodeString(tc.dst, string(src))
+
+		return encodeTCR{string(resp), resp == nil}
 	default:
 		panic("misconfigured test case")
 	}
@@ -164,12 +174,12 @@ func checkEncodeTCR(t *testing.T, cfg tbdd.Assert[encodeTC, encodeTCR]) {
 	}
 
 	switch tc.call {
-	case unsafeEncCall:
+	case unsafeEncCall, encStrCall:
 	case encCall:
 		if tc.expStr == "" {
 			is.True(r.nilDst)
 		}
-	case appendEncCall:
+	case appendEncCall, appendEncStrCall:
 		if len(tc.src) == 0 && tc.dst == nil {
 			is.True(r.nilDst)
 		}
@@ -193,6 +203,20 @@ func encodeTCVariants(t *testing.T, tc encodeTC) iter.Seq[tbdd.TestVariant[encod
 		{
 			tc := tc.clone()
 
+			tc.call = encStrCall
+
+			if !yield(tbdd.TestVariant[encodeTC]{
+				TC:          tc,
+				Kind:        "encCall2encStringCall",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		{
+			tc := tc.clone()
+
 			dst := []byte(`test_`)
 			tc.expStr = string(dst) + tc.expStr
 			tc.dst = dst
@@ -210,11 +234,42 @@ func encodeTCVariants(t *testing.T, tc encodeTC) iter.Seq[tbdd.TestVariant[encod
 		{
 			tc := tc.clone()
 
+			dst := []byte(`test_`)
+			tc.expStr = string(dst) + tc.expStr
+			tc.dst = dst
+			tc.call = appendEncStrCall
+
+			if !yield(tbdd.TestVariant[encodeTC]{
+				TC:          tc,
+				Kind:        "encCall2appendEncStrCall",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		{
+			tc := tc.clone()
+
 			tc.call = appendEncCall
 
 			if !yield(tbdd.TestVariant[encodeTC]{
 				TC:          tc,
 				Kind:        "encCall2appendEncCall-nil-dst",
+				SkipCloneTC: true,
+			}) {
+				return
+			}
+		}
+
+		{
+			tc := tc.clone()
+
+			tc.call = appendEncStrCall
+
+			if !yield(tbdd.TestVariant[encodeTC]{
+				TC:          tc,
+				Kind:        "encCall2appendEncStringCall",
 				SkipCloneTC: true,
 			}) {
 				return

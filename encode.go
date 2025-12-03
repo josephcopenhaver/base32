@@ -40,11 +40,7 @@ func encodedLen(n int) int {
 	return result
 }
 
-func encode(dst []byte, src []byte) {
-	n := len(src)
-
-	srcPtr := unsafe.Pointer(&src[0])
-	dstPtr := unsafe.Pointer(&dst[0])
+func encode(dstPtr, srcPtr unsafe.Pointer, n int) {
 
 	for range n / 5 {
 		b0 := *(*byte)(srcPtr)
@@ -132,7 +128,7 @@ func UnsafeEncode(dst []byte, src []byte) {
 		panic("base32: encode destination too short")
 	}
 
-	encode(dst, src)
+	encode(unsafe.Pointer(&dst[0]), unsafe.Pointer(&src[0]), len(src))
 }
 
 // Encode returns nil if src is empty, otherwise it returns the
@@ -146,9 +142,25 @@ func Encode(src []byte) []byte {
 	n = encodedLen(n)
 	dst := make([]byte, n)
 
-	encode(dst, src)
+	encode(unsafe.Pointer(&dst[0]), unsafe.Pointer(&src[0]), len(src))
 
 	return dst
+}
+
+// EncodeString returns "" if src is empty, otherwise it returns the
+// encoded form of src.
+func EncodeString(src string) string {
+	n := len(src)
+	if n == 0 {
+		return ""
+	}
+
+	n = encodedLen(n)
+	dst := make([]byte, n)
+
+	encode(unsafe.Pointer(&dst[0]), unsafe.Pointer(unsafe.StringData(src)), len(src))
+
+	return string(dst)
 }
 
 // AppendEncode returns the encoded form of src appended to dst
@@ -165,7 +177,26 @@ func AppendEncode(dst, src []byte) []byte {
 	dst = slices.Grow(dst, n)
 	dst = dst[:orig+n]
 
-	encode(dst[orig:], src)
+	encode(unsafe.Pointer(&dst[orig]), unsafe.Pointer(&src[0]), len(src))
+
+	return dst
+}
+
+// AppendEncodeString returns the encoded form of src appended to dst
+// if src is not empty. If src is empty dst is returned as-is.
+func AppendEncodeString(dst []byte, src string) []byte {
+	n := len(src)
+	if n == 0 {
+		return dst
+	}
+
+	n = encodedLen(n)
+	orig := len(dst)
+
+	dst = slices.Grow(dst, n)
+	dst = dst[:orig+n]
+
+	encode(unsafe.Pointer(&dst[orig]), unsafe.Pointer(unsafe.StringData(src)), len(src))
 
 	return dst
 }

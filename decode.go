@@ -69,11 +69,7 @@ func decodedLen(n int) int {
 	return (n/8)*5 + (rem*5)/8
 }
 
-func decode(dst []byte, src []byte) error {
-	n := len(src)
-
-	srcPtr := unsafe.Pointer(&src[0])
-	dstPtr := unsafe.Pointer(&dst[0])
+func decode(dstPtr, srcPtr unsafe.Pointer, n int) error {
 
 	for range n / 8 {
 		c0 := decodeTab[*(*byte)(srcPtr)]
@@ -194,7 +190,7 @@ func UnsafeDecode(dst []byte, src []byte) error {
 		panic("base32: decode destination too short")
 	}
 
-	return decode(dst, src)
+	return decode(unsafe.Pointer(&dst[0]), unsafe.Pointer(&src[0]), len(src))
 }
 
 // Decode returns the decoded form of src if src is not empty. If src is
@@ -222,7 +218,36 @@ func Decode(src []byte) ([]byte, error) {
 
 	dst := make([]byte, n)
 
-	err := decode(dst, src)
+	err := decode(unsafe.Pointer(&dst[0]), unsafe.Pointer(&src[0]), len(src))
+	return dst, err
+}
+
+// DecodeString returns the decoded form of src if src is not empty. If src is
+// empty nil is returned.
+//
+// If an error occurs during decoding then an error will be returned.
+//
+// If an error is returned the caller must not assume the returned slice
+// is nil. It is the caller's responsibility to choose how to handle a
+// non-nil result in such a case. If the data is not sensitive simply
+// ignore it. If it is sensitive consider clearing the slice of
+// contents. There is no guarantee about the contents of the slice when a
+// non-nil error is returned. It could be partially decoded or contain
+// empty bytes.
+func DecodeString(src string) ([]byte, error) {
+	n := len(src)
+	if n == 0 {
+		return nil, nil
+	}
+
+	n = decodedLen(n)
+	if n < 0 {
+		return nil, ErrInvalidBase32Length
+	}
+
+	dst := make([]byte, n)
+
+	err := decode(unsafe.Pointer(&dst[0]), unsafe.Pointer(unsafe.StringData(src)), len(src))
 	return dst, err
 }
 
@@ -253,6 +278,37 @@ func AppendDecode(dst, src []byte) ([]byte, error) {
 	dst = slices.Grow(dst, n)
 	dst = dst[:orig+n]
 
-	err := decode(dst[orig:], src)
+	err := decode(unsafe.Pointer(&dst[orig]), unsafe.Pointer(&src[0]), len(src))
+	return dst, err
+}
+
+// AppendDecodeString returns the decoded form of src appended to dst
+// if src is not empty. If src is empty dst is returned as-is.
+//
+// If an error occurs during decoding then an error will be returned.
+//
+// If an error is returned the caller must not assume the returned slice
+// is nil. It is the caller's responsibility to choose how to handle a
+// non-nil result in such a case. If the data is not sensitive simply
+// ignore it. If it is sensitive consider clearing the slice of
+// newly appended contents. There is no guarantee about the contents of
+// the appended slice when a non-nil error is returned. It could be
+// partially decoded or contain empty bytes.
+func AppendDecodeString(dst []byte, src string) ([]byte, error) {
+	n := len(src)
+	if n == 0 {
+		return dst, nil
+	}
+
+	n = decodedLen(n)
+	if n < 0 {
+		return nil, ErrInvalidBase32Length
+	}
+	orig := len(dst)
+
+	dst = slices.Grow(dst, n)
+	dst = dst[:orig+n]
+
+	err := decode(unsafe.Pointer(&dst[orig]), unsafe.Pointer(unsafe.StringData(src)), len(src))
 	return dst, err
 }
