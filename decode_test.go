@@ -301,7 +301,7 @@ func decodeTCVariants(t *testing.T, tc decodeTC) iter.Seq[tbdd.TestVariant[decod
 	}
 }
 
-// TestDecode uses the tbdd.BDDLifecycle "test helper".
+// TestDecode uses the tbdd.Lifecycle "test helper".
 // For each entry in tcs:
 //   - TC describes inputs + expectations.
 //   - Act (runDecodeTC) runs the appropriate decode function based on TC.call.
@@ -309,11 +309,11 @@ func decodeTCVariants(t *testing.T, tc decodeTC) iter.Seq[tbdd.TestVariant[decod
 //   - Variants (decodeTCVariants) generate additional derived test cases.
 //   - Describe (descDecodeTC) fills in the "then" string if not set.
 //
-// To add a new scenario, append a new BDDLifecycle entry to tcs.
+// To add a new scenario, append a new tbdd.Lifecycle entry to tcs.
 func TestDecode(t *testing.T) {
 	t.Parallel()
 
-	tcs := []tbdd.BDDLifecycle[decodeTC, decodeTCR]{
+	tcs := []tbdd.Lifecycle[decodeTC, decodeTCR]{
 		{
 			When: "8 bytes",
 			TC: decodeTC{

@@ -3,7 +3,7 @@ module github.com/josephcopenhaver/base32
 go 1.25.0
 
 require (
-	github.com/josephcopenhaver/tbdd-go v0.0.0-20251201221357-197067286041
+	github.com/josephcopenhaver/tbdd-go v1.0.0
 	github.com/stretchr/testify v1.11.1
 )
 
